@@ -1,0 +1,194 @@
+/* Container resets */
+.container {
+    height: 100vh;
+    width: 100vw;
+    background-color: #121212; /* Dark Background */
+    overflow: hidden;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* LOBBY STYLES */
+.lobbyContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #121212;
+}
+
+.lobbyCard {
+    width: 400px;
+    background-color: #1e1e1e !important;
+    border: 1px solid #333;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.videoPreview {
+    width: 100%;
+    height: 200px;
+    background-color: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.previewVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); /* Mirror effect */
+}
+
+/* Input text color override for MUI */
+.textField fieldset {
+    border-color: #555 !important;
+}
+.textField input {
+    color: white !important;
+}
+.textField label {
+    color: #aaa !important;
+}
+
+/* MAIN MEETING UI */
+.meetContainer {
+    display: flex;
+    height: 100%;
+    position: relative;
+}
+
+.videoGrid {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    padding-bottom: 90px; /* Space for footer */
+    transition: all 0.3s ease;
+    overflow-y: auto;
+}
+
+.shrinkVideo {
+    margin-right: 320px; /* Push video when chat opens */
+}
+
+.videoWrapper {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    max-width: 48%; /* 2 per row roughly */
+    max-height: 45vh;
+    background: #000;
+    aspect-ratio: 16/9;
+}
+
+.mainVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.nameTag {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0,0,0,0.6);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* CHAT SIDEBAR */
+.chatContainer {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 80px; /* Stop before controls */
+    width: 320px;
+    background-color: #1e1e1e;
+    border-left: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.chatHeader {
+    padding: 15px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+
+.chatMessages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.messageBubble {
+    background-color: #333;
+    padding: 10px;
+    border-radius: 8px;
+    color: white;
+    word-break: break-word;
+}
+
+.chatInputArea {
+    padding: 15px;
+    border-top: 1px solid #333;
+    display: flex;
+    gap: 10px;
+    background-color: #1e1e1e;
+}
+
+/* BOTTOM CONTROLS */
+.controlsContainer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background-color: #1e1e1e;
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    z-index: 20;
+}
+
+.controlsLeft, .controlsRight {
+    flex: 1;
+    display: flex;
+}
+.controlsRight {
+    justify-content: flex-end;
+}
+
+.controlsCenter {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.controlsCenter button {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    transition: background 0.3s;
+}
+
+.controlsCenter button:hover {
+    background-color: #444;
+}
