@@ -1340,8 +1340,7 @@ export default function VideoMeetComponent() {
     socketRef.current.on("signal", gotMessageFromServer);
     socketRef.current.on("connect", () => {
       
-      // FIX HERE: Use window.location.pathname instead of href
-      // This ensures we get "/meetingCode" regardless of localhost vs IP address
+      // FIX: Use pathname so localhost and IP users join the SAME room
       socketRef.current.emit("join-call", window.location.pathname);
       
       socketIdRef.current = socketRef.current.id;
