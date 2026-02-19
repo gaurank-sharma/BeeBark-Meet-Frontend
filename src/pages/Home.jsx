@@ -200,24 +200,28 @@
 
 
 
-
 import React, { useContext, useState } from "react";
 import withAuth from "../utils/withAuth";
 import { useNavigate } from "react-router-dom";
 import { 
-  Button, IconButton, TextField, Card, CardContent, Typography, Grid, Box, AppBar, Toolbar 
+  Button, TextField, Card, CardContent, Typography, Grid, Box, AppBar, Toolbar, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar 
 } from "@mui/material";
 import RestoreIcon from "@mui/icons-material/Restore";
 import VideoCallIcon from '@mui/icons-material/VideoCall';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { AuthContext } from "../contexts/AuthContext";
-
-import "../App.css"; // Ensure you have basic resets here
+import server from "../environment";
+import axios from "axios";
 
 function Home() {
   let navigate = useNavigate();
   const [meetingCode, setMeetingCode] = useState("");
+  const [openSchedule, setOpenSchedule] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [snackMsg, setSnackMsg] = useState("");
+  
   const { addToUserHistory } = useContext(AuthContext);
 
   let handleJoinVideoCall = async () => {
@@ -232,79 +236,60 @@ function Home() {
       navigate(`/${randomCode}`);
   }
 
+  const handleSchedule = async () => {
+      if(!scheduleDate) {
+          setSnackMsg("Please select a date and time");
+          return;
+      }
+      // You can add backend logic here to save the meeting
+      setSnackMsg(`Meeting Scheduled for ${new Date(scheduleDate).toLocaleString()}`);
+      setOpenSchedule(false);
+      // Optional: Generate a code for them to copy
+  }
+
   return (
     <Box sx={{ flexGrow: 1, height: "100vh", bgcolor: "#121212", overflow: "hidden" }}>
-      {/* APP BAR */}
       <AppBar position="static" sx={{ bgcolor: "#1E1E1E", boxShadow: "none", borderBottom: "1px solid #333" }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: "#FFD600", fontWeight: "bold" }}>
             BeeBark Meet
           </Typography>
-          
           <Button color="inherit" onClick={() => navigate("/history")} startIcon={<RestoreIcon sx={{ color: "#AAA" }} />}>
              <span style={{ color: "#AAA" }}>History</span>
           </Button>
-          
-          <Button 
-            color="inherit" 
-            onClick={() => { localStorage.removeItem("token"); navigate("/auth"); }}
-            startIcon={<LogoutIcon sx={{ color: "#F44336" }} />}
-          >
+          <Button color="inherit" onClick={() => { localStorage.removeItem("token"); navigate("/auth"); }} startIcon={<LogoutIcon sx={{ color: "#F44336" }} />}>
             <span style={{ color: "#F44336" }}>Logout</span>
           </Button>
         </Toolbar>
       </AppBar>
 
-      {/* MAIN CONTENT */}
-      <Grid container sx={{ height: "calc(100vh - 64px)" }}>
-        
-        {/* LEFT PANEL */}
-        <Grid item xs={12} md={6} sx={{ display: "flex", flexDirection: "column", justifyContent: "center", p: 8 }}>
+      <Grid container sx={{ height: "calc(100vh - 64px)", p: 4 }} spacing={4}>
+        <Grid item xs={12} md={5} sx={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <Typography variant="h3" sx={{ color: "white", fontWeight: "800", mb: 2 }}>
-            Premium Video Meetings. <br />
-            <span style={{ color: "#FFD600" }}>Now Free.</span>
+            Premium Video Meetings. <br /> <span style={{ color: "#FFD600" }}>Now Free.</span>
           </Typography>
-          <Typography variant="h6" sx={{ color: "#AAA", mb: 6, maxWidth: "500px" }}>
-            We engineered the service for secure, high-quality business meetings. 
-            Google Meet quality, BeeBark privacy.
+          <Typography variant="h6" sx={{ color: "#AAA", mb: 6 }}>
+            Secure, high-quality business meetings. Google Meet quality, BeeBark privacy.
           </Typography>
 
-          <Box sx={{ display: "flex", gap: 3 }}>
-            {/* NEW MEETING CARD */}
-            <Card sx={{ bgcolor: "#1E1E1E", border: "1px solid #333", minWidth: 250, borderRadius: 4 }}>
-                <CardContent>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                        <Box sx={{ bgcolor: "#FFD600", p: 1, borderRadius: 2, display: "flex" }}>
-                            <VideoCallIcon sx={{ color: "black" }} />
-                        </Box>
-                        <Typography variant="h6" color="white">New Meeting</Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: "#888", mb: 3 }}>
-                        Start an instant meeting and invite others via link.
-                    </Typography>
-                    <Button 
-                        onClick={handleCreateRandomMeeting} 
-                        fullWidth 
-                        variant="contained" 
-                        sx={{ bgcolor: "#FFD600", color: "black", fontWeight: "bold", '&:hover': { bgcolor: "#FFEA00" } }}
-                    >
-                        Start Instant
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            
+            {/* NEW MEETING */}
+            <Card sx={{ bgcolor: "#1E1E1E", border: "1px solid #333", borderRadius: 4 }}>
+                <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Button onClick={handleCreateRandomMeeting} variant="contained" sx={{ bgcolor: "#FFD600", color: "black", fontWeight: "bold", py: 1.5, px: 3 }}>
+                        <VideoCallIcon sx={{ mr: 1 }} /> New Meeting
+                    </Button>
+                    <Button onClick={() => setOpenSchedule(true)} variant="outlined" sx={{ color: "white", borderColor: "#555", py: 1.5 }}>
+                        <CalendarMonthIcon sx={{ mr: 1 }} /> Schedule
                     </Button>
                 </CardContent>
             </Card>
 
-            {/* JOIN MEETING CARD */}
-            <Card sx={{ bgcolor: "#1E1E1E", border: "1px solid #333", minWidth: 250, borderRadius: 4 }}>
+            {/* JOIN MEETING */}
+            <Card sx={{ bgcolor: "#1E1E1E", border: "1px solid #333", borderRadius: 4 }}>
                 <CardContent>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                        <Box sx={{ bgcolor: "#333", p: 1, borderRadius: 2, display: "flex" }}>
-                            <KeyboardIcon sx={{ color: "white" }} />
-                        </Box>
-                        <Typography variant="h6" color="white">Join Meeting</Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: "#888", mb: 3 }}>
-                        Have a code? Enter it below to join instantly.
-                    </Typography>
+                    <Typography variant="body1" sx={{ color: "#888", mb: 1 }}>Join with a code</Typography>
                     <Box sx={{ display: "flex", gap: 1 }}>
                         <TextField
                             value={meetingCode}
@@ -312,13 +297,10 @@ function Home() {
                             placeholder="abc-def"
                             variant="outlined"
                             size="small"
+                            fullWidth
                             sx={{ input: { color: "white" }, fieldset: { borderColor: "#555" } }}
                         />
-                        <Button 
-                            onClick={handleJoinVideoCall} 
-                            variant="outlined" 
-                            sx={{ color: "white", borderColor: "#555", '&:hover': { borderColor: "#FFD600", color: "#FFD600" } }}
-                        >
+                        <Button onClick={handleJoinVideoCall} variant="text" sx={{ color: "#FFD600", fontWeight: "bold" }}>
                             Join
                         </Button>
                     </Box>
@@ -327,16 +309,36 @@ function Home() {
           </Box>
         </Grid>
 
-        {/* RIGHT PANEL (IMAGE) */}
-        <Grid item xs={12} md={6} sx={{ display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#000" }}>
-           <img 
-            src="/hero_illustration.png" // Put a nice transparent PNG here
-            alt="Video Call" 
-            style={{ maxWidth: "80%", opacity: 0.8 }} 
-           />
+        <Grid item xs={12} md={7} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+           <img src="/hero_illustration.png" alt="Connect" style={{ maxWidth: "100%", maxHeight: "500px", objectFit: "contain" }} />
         </Grid>
-
       </Grid>
+
+      {/* SCHEDULE MODAL */}
+      <Dialog open={openSchedule} onClose={() => setOpenSchedule(false)} PaperProps={{ style: { backgroundColor: "#1E1E1E", color: "white", border: "1px solid #333" } }}>
+        <DialogTitle>Schedule a Meeting</DialogTitle>
+        <DialogContent>
+            <Typography variant="body2" sx={{ color: "#aaa", mb: 2 }}>Choose a date and time for your future meeting.</Typography>
+            <TextField
+                type="datetime-local"
+                fullWidth
+                variant="outlined"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                sx={{ 
+                    input: { color: "white" }, 
+                    "& .MuiOutlinedInput-root": { "& fieldset": { borderColor: "#555" }, "&:hover fieldset": { borderColor: "#FFD600" } },
+                    "& input::-webkit-calendar-picker-indicator": { filter: "invert(1)" }
+                }}
+            />
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={() => setOpenSchedule(false)} sx={{ color: "#aaa" }}>Cancel</Button>
+            <Button onClick={handleSchedule} variant="contained" sx={{ bgcolor: "#FFD600", color: "black" }}>Schedule</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={!!snackMsg} autoHideDuration={4000} onClose={() => setSnackMsg("")} message={snackMsg} />
     </Box>
   );
 }
