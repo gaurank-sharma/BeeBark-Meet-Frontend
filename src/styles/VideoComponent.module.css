@@ -1,3 +1,4 @@
+/* CONTAINER RESET */
 .meetContainer {
     width: 100vw;
     height: 100vh;
@@ -9,7 +10,19 @@
     font-family: 'Roboto', sans-serif;
 }
 
-/* LOBBY */
+/* LOADING OVERLAY */
+.loadingOverlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* LOBBY STYLES */
 .lobbyBackground {
     width: 100vw;
     height: 100vh;
@@ -20,7 +33,8 @@
 }
 
 .lobbyContainer {
-    width: 400px;
+    width: 90%;
+    max-width: 400px;
     background: #1E1E1E;
     padding: 30px;
     border-radius: 16px;
@@ -64,7 +78,9 @@
     z-index: 2;
 }
 
-/* GRID - THE BIG VIDEO FIX */
+/* --- THE MOBILE FIX IS HERE --- */
+
+/* 1. Base Grid (Desktop) */
 .videoGrid {
     flex: 1;
     display: flex;
@@ -74,39 +90,39 @@
     gap: 15px;
     padding: 20px;
     padding-bottom: 100px;
-    width: 100%;
-    height: 100%;
+    overflow-y: auto; /* Allow scrolling on mobile if many users */
 }
 
+/* 2. Chat open Adjustment */
 .gridWithChat {
-    width: calc(100% - 320px); /* Shrink for chat */
+    width: calc(100% - 320px);
 }
 
-/* Dynamic sizing for videos */
+/* 3. Responsive Video Card */
 .videoCard {
     position: relative;
     background: #000;
     border-radius: 12px;
     overflow: hidden;
-    /* Make it responsive */
+    /* Default: Desktop takes roughly half width or 400px minimum */
     flex: 1 1 400px; 
     height: 100%;
     max-height: 80vh; 
     border: 1px solid #333;
     display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-/* Force video to cover card */
 .videoCard video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover; /* Ensures video fills the card */
     transform: scaleX(-1);
 }
 
 .avatarPlaceholder {
     position: absolute;
-    width: 100px; height: 100px;
+    width: 80px; height: 80px;
     background: #FFD600;
     border-radius: 50%;
     display: flex; justify-content: center; align-items: center;
@@ -131,11 +147,18 @@
     transform: translateX(-50%);
     background: #1E1E1E;
     border: 1px solid #333;
-    padding: 10px 30px;
+    padding: 10px 20px;
     border-radius: 50px;
     display: flex; align-items: center; gap: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     z-index: 100;
+    width: max-content;
+}
+
+.meetingCode {
+    color: #aaa;
+    margin-right: 20px;
+    display: block;
 }
 
 .btnActive { background-color: #333 !important; color: white !important; }
@@ -151,8 +174,50 @@
     display: flex; flex-direction: column;
     z-index: 50;
 }
-
 .chatHeader { padding: 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; color: white; }
 .chatBody { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
 .chatBubble { background: #2C2C2C; padding: 10px; border-radius: 8px; color: #eee; }
 .chatInput { padding: 20px; border-top: 1px solid #333; display: flex; gap: 10px; background: #252525; }
+
+/* --- MOBILE SPECIFIC MEDIA QUERY --- */
+@media (max-width: 768px) {
+    .videoGrid {
+        align-items: flex-start; /* Stack from top */
+        padding-bottom: 120px; /* More space for controls on mobile */
+    }
+
+    .videoCard {
+        /* Force full width on mobile */
+        flex: 1 1 100%; 
+        width: 100%;
+        max-width: 100%;
+        min-height: 250px; /* Don't squash video height */
+        max-height: 40vh;
+    }
+
+    .controlsBar {
+        width: 90%; /* Bar takes full width minus padding */
+        gap: 8px;
+        padding: 8px 15px;
+        bottom: 20px;
+        justify-content: space-around;
+    }
+
+    .meetingCode {
+        display: none; /* Hide code on mobile to save space */
+    }
+
+    /* Adjust button sizes for mobile fingers */
+    .btnActive, .btnDanger, .btnScreenActive {
+        width: 45px;
+        height: 45px;
+    }
+
+    .chatDrawer {
+        width: 100%; /* Full screen chat on mobile */
+    }
+    
+    .gridWithChat {
+        display: none; /* Hide video when chat open on mobile */
+    }
+}

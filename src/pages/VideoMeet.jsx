@@ -494,11 +494,10 @@
 //   );
 // }
 
-
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
-import { Badge, IconButton, TextField, Button, Typography } from "@mui/material";
+import { Badge, IconButton, TextField, Button, Typography, CircularProgress } from "@mui/material";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import CallEndIcon from "@mui/icons-material/CallEnd";
@@ -515,8 +514,13 @@ const server_url = server;
 
 var connections = {};
 
+// Use multiple STUN servers for better reliability
 const peerConfigConnections = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" }
+  ],
 };
 
 export default function VideoMeetComponent() {
@@ -536,18 +540,17 @@ export default function VideoMeetComponent() {
   let [newMessages, setNewMessages] = useState(0);
   let [askForUsername, setAskForUsername] = useState(true);
   let [username, setUsername] = useState("");
+  let [loading, setLoading] = useState(false); // New loading state
   
   const videoRef = useRef([]);
   let [videos, setVideos] = useState([]);
 
-  // 1. Initial Load & Restore Username
   useEffect(() => {
     const savedName = localStorage.getItem("username");
     if(savedName) setUsername(savedName);
     getPermissions();
   }, []);
 
-  // 2. Permission Handling
   const getPermissions = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -560,7 +563,6 @@ export default function VideoMeetComponent() {
     }
   };
 
-  // 3. Hardware Toggle Logic (The Fix for 'Still Visible')
   useEffect(() => {
     if (window.localStream) {
         const videoTrack = window.localStream.getVideoTracks()[0];
@@ -573,8 +575,9 @@ export default function VideoMeetComponent() {
 
   const connect = () => {
     if (!username.trim()) return alert("Please enter a name");
-    localStorage.setItem("username", username); // Save for refresh
+    localStorage.setItem("username", username);
     setAskForUsername(false);
+    setLoading(true); // Show loading spinner
     connectToSocketServer();
   };
 
@@ -585,12 +588,13 @@ export default function VideoMeetComponent() {
       socketRef.current.emit("join-call", meetingCode);
       socketIdRef.current = socketRef.current.id;
       
-      // Re-attach local stream if element exists (since DOM changed from Lobby to Room)
+      // Re-attach local stream
       setTimeout(() => {
           if (localVideoref.current && window.localStream) {
             localVideoref.current.srcObject = window.localStream;
           }
-      }, 100);
+          setLoading(false); // Hide spinner when connected
+      }, 500);
     });
 
     socketRef.current.on("signal", gotMessageFromServer);
@@ -612,14 +616,25 @@ export default function VideoMeetComponent() {
 
     socketRef.current.on("user-joined", (id, clients) => {
       clients.forEach((socketListId) => {
+        
+        // 1. Create Peer Connection
         connections[socketListId] = new RTCPeerConnection(peerConfigConnections);
         
+        // 2. Add Local Tracks IMMEDIATELY
+        if (window.localStream) {
+            window.localStream.getTracks().forEach(track => {
+                connections[socketListId].addTrack(track, window.localStream);
+            });
+        }
+
+        // 3. ICE Candidate Handling (Trickle ICE)
         connections[socketListId].onicecandidate = (event) => {
           if (event.candidate != null) {
             socketRef.current.emit("signal", socketListId, JSON.stringify({ ice: event.candidate }));
           }
         };
 
+        // 4. Handle Incoming Stream
         connections[socketListId].ontrack = (event) => {
           let videoExists = videoRef.current.find((v) => v.socketId === socketListId);
 
@@ -637,14 +652,9 @@ export default function VideoMeetComponent() {
             });
           }
         };
-
-        if (window.localStream) {
-            window.localStream.getTracks().forEach(track => {
-                connections[socketListId].addTrack(track, window.localStream);
-            });
-        }
       });
 
+      // 5. Create Offer (Initiator Logic)
       if (id === socketIdRef.current) {
         for (let id2 in connections) {
           if (id2 === socketIdRef.current) continue;
@@ -679,6 +689,7 @@ export default function VideoMeetComponent() {
           }).catch((e) => console.log(e));
       }
       if (signal.ice) {
+        // Add Candidate immediately to fix connection delay
         connections[fromId].addIceCandidate(new RTCIceCandidate(signal.ice)).catch((e) => console.log(e));
       }
     }
@@ -694,8 +705,6 @@ export default function VideoMeetComponent() {
   };
 
   const handleScreen = async () => {
-    // Basic screen share implementation... (Keep existing logic or use simple replaceTrack)
-    // For simplicity in this fix, I'll toggle video off to indicate screen share start
     if(!screen) {
         try {
             const stream = await navigator.mediaDevices.getDisplayMedia({ cursor: true });
@@ -707,7 +716,6 @@ export default function VideoMeetComponent() {
             });
             
             screenTrack.onended = () => {
-               // Revert
                const camTrack = window.localStream.getVideoTracks()[0];
                Object.keys(connections).forEach(key => {
                 const sender = connections[key].getSenders().find(s => s.track.kind === "video");
@@ -736,16 +744,12 @@ export default function VideoMeetComponent() {
             </Typography>
             
             <div className={styles.videoPreviewContainer}>
-                {/* LOBBY VIDEO PREVIEW */}
                 <video ref={localVideoref} autoPlay muted className={styles.videoPreview}></video>
-                
-                {/* BLACK OVERLAY IF VIDEO OFF */}
                 {!video && (
                     <div className={styles.blackOverlay}>
                         <Typography variant="h6" style={{color: 'white'}}>Camera Off</Typography>
                     </div>
                 )}
-
                 <div className={styles.previewControls}>
                      <IconButton onClick={() => setAudio(!audio)} style={{color: audio ? 'white' : '#f44336'}}>
                         {audio ? <MicIcon /> : <MicOffIcon />}
@@ -777,7 +781,14 @@ export default function VideoMeetComponent() {
 
   return (
     <div className={styles.meetContainer}>
-        {/* VIDEO GRID - Now Dynamic */}
+        {loading && (
+            <div className={styles.loadingOverlay}>
+                <CircularProgress style={{color: "#FFD600"}} />
+                <Typography variant="h6" style={{color: "white", marginTop: 20}}>Syncing Streams...</Typography>
+            </div>
+        )}
+
+        {/* VIDEO GRID */}
         <div className={`${styles.videoGrid} ${showModal ? styles.gridWithChat : ''}`}>
              
              {/* LOCAL VIDEO */}
@@ -797,6 +808,7 @@ export default function VideoMeetComponent() {
                     <video 
                         ref={(el) => { if(el) el.srcObject = v.stream }} 
                         autoPlay 
+                        playsInline
                     />
                     <div className={styles.nameTag}>Participant</div>
                 </div>
@@ -805,7 +817,7 @@ export default function VideoMeetComponent() {
 
         {/* CONTROLS */}
         <div className={styles.controlsBar}>
-            <Typography variant="subtitle1" style={{color: '#aaa', marginRight: '20px'}}>{meetingCode}</Typography>
+            <Typography variant="subtitle1" className={styles.meetingCode}>{meetingCode}</Typography>
             
             <IconButton onClick={() => setAudio(!audio)} className={audio ? styles.btnActive : styles.btnDanger}>
                 {audio ? <MicIcon /> : <MicOffIcon />}
